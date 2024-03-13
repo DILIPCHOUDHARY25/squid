@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Start Squid service
+sudo systemctl start squid
+
 # Prompt the user for the number of proxies
 read -p "Enter the number of proxies you want to create: " NUM_PROXIES
 
@@ -71,6 +74,9 @@ do
     echo "Password: $PASSWORD"
     echo "-------------------------"
 done
+
+# Restart Squid service
+sudo systemctl restart squid
 
 # Display Squid proxy information
 echo "Squid Proxy Server is now running with $NUM_PROXIES proxies."
