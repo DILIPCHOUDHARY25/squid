@@ -10,13 +10,14 @@ if ! [[ "$NUM_PROXIES" =~ ^[1-9][0-9]*$ ]]; then
 fi
 
 # Obtain the external IP address
-STARTING_IP=$(curl -s ifconfig.me)
+STARTING_IP=$(curl -s https://api64.ipify.org?format=text)
 
 # Validate the input
 if ! [[ "$STARTING_IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
     echo "Unable to retrieve a valid external IP address. Exiting."
     exit 1
 fi
+
 
 # Define port range
 PORT_START=10001
