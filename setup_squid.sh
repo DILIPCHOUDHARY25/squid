@@ -1,5 +1,10 @@
 #!/bin/bash
 
+
+# Install Squid using the provided script
+wget https://raw.githubusercontent.com/serverok/squid-proxy-installer/master/squid3-install.sh -O squid-install.sh
+chmod +x squid-install.sh
+./squid-install.sh
 # Start Squid service
 sudo systemctl start squid
 
@@ -15,27 +20,9 @@ fi
 # Define port range
 PORT_RANGE="10001-30000"
 
-# Update the system
-sudo yum update -y
-
-# Install Squid
-sudo yum install squid -y
-
-# Backup the original Squid configuration file
-sudo mv /etc/squid/squid.conf /etc/squid/squid.conf.bak
-
-# Create a new Squid configuration file
-sudo tee /etc/squid/squid.conf > /dev/null <<EOF
-# Add common Squid configuration here
-EOF
-
 # Adjust firewall settings
 sudo firewall-cmd --zone=public --permanent --add-port=$PORT_RANGE/tcp
 sudo firewall-cmd --reload
-
-# Enable and start Squid service
-sudo systemctl enable squid
-sudo systemctl start squid
 
 # Create a Squid password file
 SQUID_PASSWD_FILE="/etc/squid/passwd"
