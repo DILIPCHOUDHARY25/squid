@@ -41,19 +41,19 @@ sudo touch $SQUID_PASSWD_FILE
 # Generate multiple IPs, ports, usernames, and passwords
 for ((i=1; i<=$NUM_PROXIES; i++))
 do
-    # Obtain the external IP address
-    STARTING_IP=$(curl -s ifconfig.me)
+    # Prompt the user for the desired IP range
+    read -p "Enter the starting IP for Proxy $i: " STARTING_IP
 
     # Validate the input
     if ! [[ "$STARTING_IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-        echo "Unable to retrieve a valid external IP address. Exiting."
+        echo "Invalid input. Please enter a valid IP address."
         exit 1
     fi
 
     IP="$STARTING_IP"
     PORT=$((10000 + i))
-    USERNAME=$(openssl rand -hex 3 | tr -d '[:xdigit:]')  # Generate a random 5-character alphanumeric username
-    PASSWORD=$(openssl rand -hex 3 | tr -d '[:xdigit:]')  # Generate a random 5-character alphanumeric password
+    USERNAME=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 5)  # Generate a random 5-character alphanumeric username
+    PASSWORD=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 5)  # Generate a random 5-character alphanumeric password
 
     # Append proxy configuration to Squid file
     echo "http_port $IP:$PORT" | sudo tee -a /etc/squid/squid.conf > /dev/null
