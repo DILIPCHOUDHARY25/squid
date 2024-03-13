@@ -9,8 +9,18 @@ if ! [[ "$NUM_PROXIES" =~ ^[1-9][0-9]*$ ]]; then
     exit 1
 fi
 
+# Obtain the external IP address
+STARTING_IP=$(curl -s ifconfig.me)
+
+# Validate the input
+if ! [[ "$STARTING_IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    echo "Unable to retrieve a valid external IP address. Exiting."
+    exit 1
+fi
+
 # Define port range
-PORT_RANGE="10001-30000"
+PORT_START=10001
+PORT_END=$((PORT_START + NUM_PROXIES - 1))
 
 # Update the system
 sudo yum update -y
@@ -27,7 +37,7 @@ sudo tee /etc/squid/squid.conf > /dev/null <<EOF
 EOF
 
 # Adjust firewall settings
-sudo firewall-cmd --zone=public --permanent --add-port=$PORT_RANGE/tcp
+sudo firewall-cmd --zone=public --permanent --add-port=$PORT_START-$PORT_END/tcp
 sudo firewall-cmd --reload
 
 # Enable and start Squid service
@@ -38,25 +48,15 @@ sudo systemctl start squid
 SQUID_PASSWD_FILE="/etc/squid/passwd"
 sudo touch $SQUID_PASSWD_FILE
 
-# Generate multiple IPs, ports, usernames, and passwords
-for ((i=1; i<=$NUM_PROXIES; i++))
+# Generate multiple ports, usernames, and passwords
+for ((i=0; i<$NUM_PROXIES; i++))
 do
-    # Obtain the external IP address
-    STARTING_IP=$(curl -s ifconfig.me)
-
-    # Validate the input
-    if ! [[ "$STARTING_IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-        echo "Unable to retrieve a valid external IP address. Exiting."
-        exit 1
-    fi
-
-    IP="$STARTING_IP"
-    PORT=$((10000 + i))
+    PORT=$((PORT_START + i))
     USERNAME=$(openssl rand -hex 3 | tr -d '[:xdigit:]')  # Generate a random 5-character alphanumeric username
     PASSWORD=$(openssl rand -hex 3 | tr -d '[:xdigit:]')  # Generate a random 5-character alphanumeric password
 
     # Append proxy configuration to Squid file
-    echo "http_port $IP:$PORT" | sudo tee -a /etc/squid/squid.conf > /dev/null
+    echo "http_port $STARTING_IP:$PORT" | sudo tee -a /etc/squid/squid.conf > /dev/null
     echo "acl proxy$i proxy_auth $USERNAME" | sudo tee -a /etc/squid/squid.conf > /dev/null
     echo "http_access allow proxy$i" | sudo tee -a /etc/squid/squid.conf > /dev/null
 
@@ -64,8 +64,8 @@ do
     echo "$USERNAME:$PASSWORD" | sudo htpasswd -i -c $SQUID_PASSWD_FILE -
 
     # Display proxy information
-    echo "Proxy $i:"
-    echo "IP: $IP"
+    echo "Proxy $((i+1)):"
+    echo "IP: $STARTING_IP"
     echo "Port: $PORT"
     echo "Username: $USERNAME"
     echo "Password: $PASSWORD"
@@ -74,5 +74,5 @@ done
 
 # Display Squid proxy information
 echo "Squid Proxy Server is now running with $NUM_PROXIES proxies."
-echo "Port Range: $PORT_RANGE"
+echo "Port Range: $PORT_START-$PORT_END"
 echo "Squid password file: $SQUID_PASSWD_FILE"
